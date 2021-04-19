@@ -10,6 +10,11 @@ def main():
     env = simplePendulum.PendulumEnv()
     env.reset()
 
+    states_list = get_discrete_state_values(env, [10, 5])
+    Q = get_initial_Q(states_list)
+
+    # print(states_list)
+    # print(Q)
     # print_environment_bounds(env)
 
     u_next = 1
@@ -26,6 +31,28 @@ def main():
         # print("z: {}\tr: {}, u: {}".format(z1, r1, env.last_u))
 
     env.close()
+
+
+def get_discrete_state_values(env, bin_list):
+    # set up empty grid based on discretization
+
+    states_discrete = []
+    for lo, hi, bins in zip(env.state_space.low, env.state_space.high, bin_list):
+        states_discrete.append(np.linspace(lo, hi, bins))
+
+    return states_discrete
+
+
+def get_initial_Q(x):
+
+    dims = []
+
+    for state in x:
+        dims.append(len(state))
+
+    Q = np.zeros(dims)
+
+    return Q
 
 
 def sarsa(env, Q, params):
