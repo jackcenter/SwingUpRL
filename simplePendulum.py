@@ -20,9 +20,12 @@ class PendulumEnv(gym.Env):
         self.l = 1.
         self.viewer = None
 
-        high = np.array([1., 1., self.max_speed], dtype=np.float32)
+        self.state_space = spaces.Box(
+            low=-np.array([np.pi, self.max_speed], dtype=np.float32),
+            high=np.array([np.pi, self.max_speed], dtype=np.float32),
+            dtype=np.float32
+        )
 
-        # TODO: make these discrete
         self.action_space = spaces.Box(
             low=-self.max_torque,
             high=self.max_torque, shape=(1,),
@@ -30,14 +33,10 @@ class PendulumEnv(gym.Env):
         )
 
         self.observation_space = spaces.Box(
-
-            low=-high,
-            high=high,
+            low=-np.array([1., 1., self.max_speed], dtype=np.float32),
+            high=np.array([1., 1., self.max_speed], dtype=np.float32),
             dtype=np.float32
         )
-
-        # self.action_space = spaces.Discrete(5)
-        # self.observation_space = spaces.Discrete(10)
 
         self.np_random = None
         self.state = None
