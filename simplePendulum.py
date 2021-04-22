@@ -13,12 +13,16 @@ class PendulumEnv(gym.Env):
 
     def __init__(self, g=9.8):
         self.max_speed = 8
-        self.max_torque = 2.
+        self.max_torque = 1.
         self.dt = .05
         self.g = g
         self.m = 1.
         self.l = 1.
         self.viewer = None
+        self.bin_list = {
+            "states": (72, 17),
+            "actions": 5
+        }
 
         self.state_space = spaces.Box(
             low=-np.array([np.pi, self.max_speed], dtype=np.float32),
@@ -38,6 +42,9 @@ class PendulumEnv(gym.Env):
             dtype=np.float32
         )
 
+        self.state_space_discrete = self.get_discrete_state_space()
+        self.action_space_discrete = self.get_discrete_action_space()
+
         self.np_random = None
         self.state = None
         self.last_u = None
@@ -47,6 +54,39 @@ class PendulumEnv(gym.Env):
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
+
+    def get_discrete_state_values(self, state):
+
+        return np.linspace(self.state_space.low[state], self.state_space.high[state], self.bin_list.get("states")[state])
+
+    def get_discrete_action_values(self, action=0):
+
+        return np.linspace(self.action_space.low[action], self.action_space.high[action], self.bin_list.get("actions"))
+
+    def get_discrete_state_space(self):
+        # set up empty grid based on discretization
+
+        state_ranges = []
+        for lo, hi, bins in zip(self.state_space.low, self.state_space.high, self.bin_list.get("states")):
+            state_ranges.append(np.linspace(lo, hi, bins))
+
+        state_space_discrete = np.array([(x, y) for x in state_ranges[0] for y in state_ranges[1]])
+        return state_space_discrete
+
+    def get_discrete_action_space(self):
+
+        action_space_discrete = list(np.linspace(self.action_space.low[0], self.action_space.high[0], self.bin_list.get("actions")))
+        return action_space_discrete
+
+    def get_state_index(self, state):
+
+        x_idx = np.sum(np.abs(self.state_space_discrete - state), axis=1).argmin()
+
+        return x_idx
+
+    def get_action_index(self, action):
+
+        return np.abs(self.action_space_discrete - action).argmin()
 
     def step(self, u):
         th, thdot = self.state  # th := theta
@@ -67,29 +107,11 @@ class PendulumEnv(gym.Env):
         self.state = np.array([newth, newthdot])
         return self._get_obs(), -costs, False, {}
 
-    # def step(self, u):
-    #     th, thdot = self.state  # th := theta
-    #
-    #     g = self.g
-    #     m = self.m
-    #     l = self.l
-    #     dt = self.dt
-    #
-    #     u = np.clip(u, -self.max_torque, self.max_torque)[0]
-    #     self.last_u = u  # for rendering
-    #     costs = angle_normalize(th) ** 2 + .1 * thdot ** 2 + .001 * (u ** 2)
-    #
-    #     newthdot = thdot + (-3 * g / (2 * l) * np.sin(th + np.pi) + 3. / (m * l ** 2) * u) * dt
-    #     newth = th + newthdot * dt
-    #     newthdot = np.clip(newthdot, -self.max_speed, self.max_speed)
-    #
-    #     self.state = np.array([newth, newthdot])
-    #     return self._get_obs(), -costs, False, {}
-
     def reset(self):
-        # high = np.array([np.pi, 1])
-        # self.state = self.np_random.uniform(low=-high, high=high)
-        self.state = np.array([np.pi, 0])
+        low = np.array([5/6*np.pi, -.2])
+        high = np.array([7/6*np.pi, .2])
+        self.state = self.np_random.uniform(low=low, high=high)
+        # self.state = np.array([np.pi, 0])
         self.last_u = None
         return self._get_obs()
 
