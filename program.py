@@ -3,7 +3,6 @@ import numpy as np
 import config
 import simplePendulum
 
-# TODO: improve state action indexing so it is Q[(s_idx, a_idx)]
 # TODO: add default action = 0
 # TODO: add documentation
 
@@ -22,6 +21,9 @@ def main():
     else:
         Q = get_initial_Q(env)
 
+    print(Q)
+    plot_policy(env, Q, params.get("default_action_index"))
+
     if cfg.get("train"):
         for i in range(100):
             if not i%100:
@@ -32,7 +34,7 @@ def main():
 
         np.save('Q_new.npy', Q)
 
-    plot_policy(env, Q)
+    plot_policy(env, Q, params.get("default_action_index"))
     run_policy(env, Q)
 
     env.close()
@@ -68,10 +70,11 @@ def sarsa(env, Q, params):
     epsilon = params.get("epsilon")
     gamma = params.get("gamma")
     iterations = params.get("iterations")
+    ud_idx = params.get("default_action_idx")
 
     x0 = observe(env)
     x0_idx = env.get_state_index(x0)
-    u0_idx = policy(env, Q, x0_idx, epsilon)
+    u0_idx = policy(env, Q, x0_idx, ud_idx, epsilon)
     u0 = env.action_space_discrete[u0_idx]
     r = reward(x0, u0)
 
@@ -80,7 +83,7 @@ def sarsa(env, Q, params):
         x1 = observe(env)
         x1_idx = env.get_state_index(x1)
 
-        u1_idx = policy(env, Q, x1_idx, epsilon)
+        u1_idx = policy(env, Q, x1_idx, ud_idx, epsilon)
 
         u1 = env.action_space_discrete[u1_idx]
         step(env, u1)
@@ -103,10 +106,11 @@ def sarsa_lambda(env, Q, N, params):
     gamma = params.get("gamma")
     iterations = params.get("iterations")
     lamb = params.get("lambda")
+    ud_idx = params.get("default_action_idx")
 
     x0 = observe(env)
     x0_idx = env.get_state_index(x0)
-    u0_idx = policy(env, Q, x0_idx, epsilon)
+    u0_idx = policy(env, Q, x0_idx, ud_idx, epsilon)
     u0 = env.action_space_discrete[u0_idx]
     r = reward(x0, u0)
 
@@ -116,7 +120,7 @@ def sarsa_lambda(env, Q, N, params):
         x1 = observe(env)
         x1_idx = env.get_state_index(x1)
 
-        u1_idx = policy(env, Q, x1, epsilon)
+        u1_idx = policy(env, Q, x1, ud_idx, epsilon)
         u1 = env.action_space_discrete[u1_idx]
 
         step(env, u1)
@@ -148,14 +152,14 @@ def step(env, u):
     env.step([u])
 
 
-def policy(env, Q, x_idx, epsilon=0.1):
+def policy(env, Q, x_idx, ud_idx, epsilon=0.0):
 
     if np.random.rand() < epsilon:
         u_idx = np.random.randint(len(env.action_space_discrete))
 
     else:
-        max_val = float('-inf')
-        max_idx = -1
+        max_val = Q[x_idx][ud_idx]
+        max_idx = ud_idx
 
         for u_idx in range(0, len(env.action_space_discrete)):
             val = Q[x_idx][u_idx]
@@ -184,13 +188,14 @@ def print_environment_bounds(env):
     print(env.action_space.sample())
 
 
-def plot_policy(env, Q):
+def plot_policy(env, Q, ud_idx):
 
     x_list = env.state_space_discrete
     x0_values = env.get_discrete_state_values(0)
     x1_values = env.get_discrete_state_values(1)
-    u_idx_list = [u.argmin() for u in Q]
-    u_list = [env.get_discrete_action_values()[idx] for idx in u_idx_list]
+    u_values = env.get_discrete_action_values()
+    u_idx_list = [u.argmax() if sum(u) else ud_idx for u in Q]
+    u_list = [u_values[idx] for idx in u_idx_list]
 
     actions = np.zeros((len(x0_values), len(x1_values)))
     for (x0, x1), u in zip(x_list, u_list):
