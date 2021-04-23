@@ -1,6 +1,6 @@
 def get_configuration():
     config = {
-        "load_Q": False,
+        "load_Q": True,
         "train": True
     }
 
@@ -9,11 +9,13 @@ def get_configuration():
 
 def get_training_parameters():
     params = {
-        "alpha": 0.1,
+        "alpha": 0.2,
         "epsilon": 0.1,
         "gamma": 0.9,
         "iterations": 400,
-        "default_action_index": 2
+        "default_action_index": None,
+        "lambda": 0.9,
+        "episodes": 900
     }
 
     return params
