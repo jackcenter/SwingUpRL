@@ -12,15 +12,15 @@ class PendulumEnv(gym.Env):
     }
 
     def __init__(self, g=9.8):
-        self.max_speed = 8
-        self.max_torque = 1.
-        self.dt = .05
-        self.g = g
-        self.m = 1.
-        self.l = 1.
+        self.max_speed = 6
+        self.max_torque = 0.45      # kg * m
+        self.dt = .05               # s
+        self.g = g                  # m/s/s
+        self.m = 0.3                # kg
+        self.l = .3048              # m
         self.viewer = None
         self.bin_list = {
-            "states": (72, 17),
+            "states": (180, 7),
             "actions": 5
         }
 
@@ -61,7 +61,8 @@ class PendulumEnv(gym.Env):
 
     def get_discrete_action_values(self, action=0):
 
-        return np.linspace(self.action_space.low[action], self.action_space.high[action], self.bin_list.get("actions"))
+        # return np.linspace(self.action_space.low[action], self.action_space.high[action], self.bin_list.get("actions"))
+        return np.array([-0.45, -0.15, 0, 0.15, 0.45])
 
     def get_discrete_state_space(self):
         # set up empty grid based on discretization
@@ -75,8 +76,9 @@ class PendulumEnv(gym.Env):
 
     def get_discrete_action_space(self):
 
-        action_space_discrete = list(np.linspace(self.action_space.low[0], self.action_space.high[0], self.bin_list.get("actions")))
-        return action_space_discrete
+        # action_space_discrete = list(np.linspace(self.action_space.low[0], self.action_space.high[0], self.bin_list.get("actions")))
+        # return action_space_discrete
+        return self.get_discrete_action_values()
 
     def get_state_index(self, state):
 
